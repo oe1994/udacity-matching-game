@@ -2,16 +2,29 @@
  * 创建一个包含所有卡片的数组
  */
 var cardArray = [
-                    "diamond","diamond",
-                    "paper-plane-o","paper-plane-o",
-                    "anchor","anchor",
-                    "bolt","bolt",
-                    "cube","cube",
-                    "leaf","leaf",
-                    "bicycle","bicycle",
-                    "bomb","bomb"];
+    "diamond",
+    "paper-plane-o",
+    "cube",
+    "anchor",
+    "bolt",
+    "leaf",
+    "bicycle",
+    "bomb"
+  ];
+  cardArray = cardArray.concat(cardArray);
 
-init(cardArray);
+  /**
+ * 胜利标志 
+ */
+var alertLose = false;
+
+var winFlag = false;
+
+var score = 3;
+
+var minute = 5;
+
+var seconds = 00;
 /**
  * 标识卡片的翻开状态 1.已翻开 0.未翻开
  */
@@ -27,6 +40,15 @@ var lastClick = -1;
  */
 var moveNum = 0;
 
+var timer = window.setInterval(timerCallback, 1000);
+
+document.querySelector("div.restart").addEventListener("click", function() {
+    restart();
+});
+
+init(cardArray);
+
+
 /*
  * 显示页面上的卡片
  *   - 使用下面提供的 "shuffle" 方法对数组中的卡片进行洗牌
@@ -41,6 +63,7 @@ var moveNum = 0;
  * @param {} array 
  */
 function init(array) {
+    winFlag = false;
     shuffle(array);
     const deck = document.querySelector("ul.deck");
     for (var i = 0; i < array.length; i++) {
@@ -65,7 +88,10 @@ function init(array) {
             e.target.classList.add("open");
             e.target.classList.add("show");
             if (!checkLegalPeer(e.target)) {
-                ilegalPeerAction(e.target);
+                setTimeout(() => {
+                    ilegalPeerAction(e.target);    
+                }, 500);
+                
             } else {
                 checkWin();
             }
@@ -73,14 +99,53 @@ function init(array) {
         });
         selected = selected.nextSibling;
     }
-    document.querySelector("div.restart").addEventListener("click", function() {
+}
+
+function restart() {
+    alert("准备好了吗？游戏即将重新开始");
+        for (var i = 0; i<3; i++) {
+            document.querySelector("ul.stars").children[i].children[0].classList.add("fa-star","fa");
+        }
+        window.clearInterval(timer);
+        minute = 5;
+        seconds = 00;
+        alertLose = false;
         moveNum = 0;
         lastClick = -1;
         cardOpenArray = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; 
         document.querySelector("span.moves").textContent = 0;
         document.querySelector("ul.deck").innerHTML="";
         init(cardArray);
-    });
+        timer = window.setInterval(timerCallback, 1000);
+}
+
+function timerCallback() {
+    if (minute == 0 && seconds == 0 && !alertLose) {
+        alertLose = true;
+        alert("时间到！你输了，要再来一局吗");
+        return;
+    }
+    if(!winFlag) {
+        if (seconds!=0) {
+            seconds -= 1;
+        } else {
+            seconds = 59;
+            minute -= 1;      
+        }
+        document.querySelector("span.timer").innerHTML = minute + ":" + seconds;
+        if (minute>=4) {
+            score = 3;
+        } else if (minute>=2) {
+            score = 2;
+            document.querySelector("ul.stars").children[2].children[0].classList.remove("fa-star","fa");
+        } else if (minute>=1) {
+            score = 1;
+            document.querySelector("ul.stars").children[1].children[0].classList.classList.remove("fa-star","fa");
+        } else {
+            score = 0;
+            document.querySelector("ul.stars").children[0].children[0].classList.remove("fa-star","fa");
+        }
+    }
 }
 
 // 洗牌函数来自于 http://stackoverflow.com/a/2450976
@@ -149,10 +214,15 @@ function ilegalPeerAction(selected) {
  * 检查是否达到胜利条件
  */
 function checkWin() {
-    for (let i =0; i< cardOpenArray.length; i++) {
-        if (cardOpenArray[i] == 0) {
-            return false;
+    setTimeout(() => {
+        for (let i =0; i< cardOpenArray.length; i++) {
+            if (cardOpenArray[i] == 0) {
+                return false;
+            }
         }
-    }
-    alert('you win, paly again?');
+        winFlag = true;
+        alertLose = false;
+        alert('你赢了!花费时长:'+ (4-minute) + "分钟,"+(60-seconds)+"秒，得分"+score+"颗星星!");
+        restart();
+    },1000);
 }
